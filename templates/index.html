@@ -1,0 +1,828 @@
+{% extends "base.html" %}
+
+{% block title %}Professional Investor Leads Generator{% endblock %}
+
+{% block extra_head %}
+<style>
+    .search-container {
+        min-height: 30vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        padding: 1rem 2rem 0 2rem;
+        margin-top: 1.5rem;
+    }
+    .search-box {
+        width: 100%;
+        max-width: 800px;
+        position: relative;
+        margin-bottom: 1.2rem;
+    }
+    .search-input {
+        width: 100%;
+        padding: 1.2rem 1rem;
+        font-size: 1.1rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 50px;
+        outline: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .search-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    .search-actions {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        gap: 0.5rem;
+    }
+    .icon-btn {
+        background: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.2s;
+        box-shadow: 0 2px 4px rgba(59,130,246,0.08);
+    }
+    .icon-btn.upload {
+        background: #10b981;
+        margin-right: 0.2rem;
+    }
+    .icon-btn.upload:hover {
+        background: #059669;
+    }
+    .icon-btn.search:hover {
+        background: #2563eb;
+    }
+    .search-examples {
+        text-align: center;
+        margin-top: 0.5rem;
+        color: #6b7280;
+    }
+    .example-tags {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 0.3rem;
+    }
+    .example-tag {
+        background: #f3f4f6;
+        color: #374151;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 1px solid #e5e7eb;
+    }
+    .example-tag:hover {
+        background: #e5e7eb;
+        transform: translateY(-2px);
+    }
+    .log-container {
+        max-height: 300px;
+        overflow-y: auto;
+        background: #f8fafc;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+    }
+    .log-entry {
+        padding: 6px 10px;
+        margin: 2px 0;
+        border-radius: 6px;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+    }
+    .log-info { background-color: #dbeafe; color: #1e40af; }
+    .log-success { background-color: #dcfce7; color: #166534; }
+    .log-warning { background-color: #fef3c7; color: #92400e; }
+    .log-error { background-color: #fee2e2; color: #991b1b; }
+    .results-section {
+        margin-top: 1.5rem;
+    }
+    
+    /* Companies section styling */
+    .company-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid #3b82f6;
+    }
+    
+    .company-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+    }
+    
+    .company-number {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        color: white;
+        border-radius: 50%;
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.1rem;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    
+    .company-info {
+        flex: 1;
+    }
+    
+    .company-name {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.25rem;
+        line-height: 1.3;
+    }
+    
+    .company-details {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+    
+    .company-detail {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .company-status {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    }
+    
+
+    
+    /* Company tags styling */
+    .company-tag {
+        background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+        color: #374151;
+        padding: 0.5rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        cursor: default;
+        transition: all 0.3s ease;
+        border: 1px solid #e5e7eb;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0.25rem;
+        max-width: 300px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .company-tag:hover {
+        background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+    
+    .company-tag-name {
+        font-weight: 600;
+        color: #1f2937;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .company-tag-details {
+        font-size: 0.75rem;
+        color: #6b7280;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .company-tag-icon {
+        color: #3b82f6;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="search-container">
+    <!-- Main Search Interface (icon-only buttons, no overlap) -->
+    <div class="search-box">
+        <form id="search-form" class="relative">
+            <input 
+                type="text" 
+                id="search-input" 
+                class="search-input" 
+                placeholder=""
+                autocomplete="off"
+            >
+            <div class="search-actions">
+                <button type="button" id="upload-btn" class="icon-btn upload" title="Upload CSV">
+                    <i class="fas fa-upload"></i>
+                </button>
+                <div class="flex gap-2">
+                    <button type="submit" class="icon-btn search" title="Search">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+        <!-- Hidden file input -->
+        <input type="file" id="csv-file" name="file" accept=".csv" class="hidden">
+    </div>
+
+    <!-- Search Examples -->
+    <div id="search-examples" class="search-examples">
+        <p class="text-sm text-gray-500 mb-1">Try these</p>
+        <div class="example-tags">
+            <div class="example-tag" onclick="setSearchQuery('Potential PI investors in banking in UAE')">Potential PI investors in banking in UAE</div>
+            <div class="example-tag" onclick="setSearchQuery('Largest banks in UAE')">Largest banks in UAE</div>
+            <div class="example-tag" onclick="setSearchQuery('CEOs of largest tech companies in UAE')">CEOs of largest tech companies in UAE</div>
+            <div class="example-tag" onclick="setSearchQuery('CXOs of largest real estate companies Dubai')">CXOs of largest real estate companies Dubai</div>
+        </div>
+    </div>
+</div>
+
+<!-- Companies Section -->
+<div id="companies-section" class="hidden max-w-4xl mx-auto mt-4">
+    <div class="bg-white p-4 rounded-xl shadow-lg border border-gray-200">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="text-lg font-semibold text-gray-800">
+                <i class="fas fa-building text-blue-600 mr-2"></i>Companies Identified
+            </h3>
+            <div class="flex items-center gap-2">
+                <span id="companies-count" class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">0</span>
+                <button onclick="toggleCompanies()" class="text-gray-500 hover:text-gray-700 transition-colors">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+        </div>
+        <div id="companies-container" class="space-y-2">
+            <!-- Companies will be populated here -->
+        </div>
+        <div id="show-more-companies" class="hidden text-center mt-3">
+            <button onclick="showMoreCompanies()" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                <i class="fas fa-chevron-down mr-1"></i>Show More
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Live Logs Section -->
+<div id="logs-section" class="hidden max-w-4xl mx-auto mt-4">
+    <div class="bg-white p-4 rounded-xl shadow-lg">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="text-xl font-semibold text-gray-900">
+                <i class="fas fa-terminal text-purple-600 mr-2"></i>Live Progress
+            </h3>
+            <div class="flex space-x-2">
+                <button onclick="clearLogs()" class="bg-gray-500 text-white px-3 py-1 rounded text-sm hover:bg-gray-600 transition-colors">
+                    <i class="fas fa-trash mr-1"></i>Clear
+                </button>
+                <button onclick="toggleLogs()" class="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 transition-colors">
+                    <i class="fas fa-eye mr-1"></i>Toggle
+                </button>
+            </div>
+        </div>
+        <div id="logs-container" class="log-container bg-gray-100 p-3 rounded-lg">
+            <div id="logs-content" class="space-y-1">
+                <!-- Logs will be populated here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contacts Section -->
+<div id="contacts-section" class="hidden max-w-4xl mx-auto mt-4"></div>
+<!-- Confirmation Section -->
+<div id="confirm-section" class="hidden max-w-4xl mx-auto mt-4 text-center">
+    <div class="bg-white p-4 rounded-xl shadow flex flex-col items-center gap-3">
+        <div class="text-lg font-semibold text-gray-800 mb-2">Proceed with LinkedIn and email extraction for these contacts?</div>
+        <div class="flex gap-4 justify-center">
+            <button id="confirm-yes" class="bg-blue-600 text-white px-6 py-2 rounded-full font-semibold hover:bg-blue-700 transition">Yes</button>
+            <button id="confirm-no" class="bg-gray-400 text-white px-6 py-2 rounded-full font-semibold hover:bg-gray-500 transition">No</button>
+        </div>
+    </div>
+</div>
+
+<!-- Results Section -->
+<div id="results-section" class="hidden max-w-4xl mx-auto mt-4">
+    <!-- Results content will be populated by JavaScript -->
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let websocket = null;
+let isSearching = false;
+
+function setSearchQuery(query) {
+    document.getElementById('search-input').value = query;
+    document.getElementById('search-input').focus();
+}
+
+function addLog(message, type = 'info') {
+    // Filter out unimportant logs
+    const ignorePatterns = [
+        'HTTP Request:',
+        'Successfully scraped',
+        'Scraping:',
+        'Waiting',
+        'No results found',
+        'Reached maximum results limit',
+        'Reached end of results',
+        'Content not relevant',
+        'Scraping failed',
+        'Some characters could not be decoded',
+        'POST /api/search',
+        'POST /api/upload',
+        'GET /',
+        'WebSocket',
+        'Disconnected from live logs',
+        'Connected to live logs',
+        'Appended',
+        'Exporting',
+        'Files updated:',
+        'File input change handler',
+        'ShowNotification',
+        'Clear',
+        'Toggle',
+        'Processing', // keep only if it contains 'company' or 'executive'
+    ];
+    // Only allow 'Processing company' and 'Enriching executive' logs from 'Processing'
+    if (message.startsWith('Processing') && !/company|executive/i.test(message)) return;
+    if (ignorePatterns.some(p => message.includes(p))) return;
+    // Always allow summary, progress, and saved-to-file logs
+    const allowPatterns = [
+        'Progress:',
+        'Extracted',
+        'Exporting',
+        'EXTRACTION SUMMARY',
+        'Saved',
+        'completed',
+        'Appended',
+        'Files updated:',
+        'Company Breakdown',
+        'Position Breakdown',
+        'Waiting',
+        '📊',
+        '🎯',
+        '🎉',
+        '✅',
+        'WARNING',
+        'ERROR',
+        'INFO',
+        'Processing company',
+        'Enriching executive',
+        'Extracting executives',
+        'Target:',
+        'Found',
+        'email:',
+        'Saved',
+        'Batch processing',
+        'Starting search',
+        'Starting batch processing',
+    ];
+    if (!allowPatterns.some(p => message.includes(p)) && type === 'info') return;
+    const logsContent = document.getElementById('logs-content');
+    const logEntry = document.createElement('div');
+    logEntry.className = `log-entry log-${type}`;
+    logEntry.innerHTML = `
+        <span class="font-mono text-xs text-gray-500">${new Date().toLocaleTimeString()}</span>
+        <span class="ml-2">${message}</span>
+    `;
+    logsContent.appendChild(logEntry);
+    logsContent.scrollTop = logsContent.scrollHeight;
+    // Also scroll the outer container to bottom
+    const logsContainer = document.getElementById('logs-container');
+    logsContainer.scrollTop = logsContainer.scrollHeight;
+}
+
+function clearLogs() {
+    document.getElementById('logs-content').innerHTML = '';
+}
+
+function toggleLogs() {
+    const container = document.getElementById('logs-container');
+    container.classList.toggle('hidden');
+}
+
+function toggleCompanies() {
+    const container = document.getElementById('companies-container');
+    container.classList.toggle('hidden');
+}
+
+function showCompanies(companies) {
+    const section = document.getElementById('companies-section');
+    const container = document.getElementById('companies-container');
+    const countElement = document.getElementById('companies-count');
+    const showMoreBtn = document.getElementById('show-more-companies');
+    
+    if (!companies || companies.length === 0) {
+        section.classList.add('hidden');
+        return;
+    }
+    
+    section.classList.remove('hidden');
+    countElement.textContent = companies.length;
+    
+    // Show first 6 companies initially
+    const initialCount = 6;
+    const hasMore = companies.length > initialCount;
+    
+    let html = '';
+    companies.slice(0, initialCount).forEach((company, index) => {
+        const industry = company.industry || 'Unknown Industry';
+        const city = company.city || 'Unknown City';
+        const country = company.country || 'Unknown Country';
+        
+        html += `
+        <div class="company-tag">
+            <i class="fas fa-building company-tag-icon"></i>
+            <div class="flex flex-col min-w-0">
+                <div class="company-tag-name">${company.name}</div>
+                <div class="company-tag-details">${city}, ${country} • ${industry}</div>
+            </div>
+        </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    
+    // Show "Show More" button if there are more companies
+    if (hasMore) {
+        showMoreBtn.classList.remove('hidden');
+        showMoreBtn.onclick = () => showMoreCompanies(companies, initialCount);
+    } else {
+        showMoreBtn.classList.add('hidden');
+    }
+}
+
+function showMoreCompanies(companies, startIndex = 6) {
+    const container = document.getElementById('companies-container');
+    const showMoreBtn = document.getElementById('show-more-companies');
+    
+    let html = container.innerHTML;
+    const remainingCompanies = companies.slice(startIndex);
+    const nextBatch = remainingCompanies.slice(0, 6);
+    const hasMore = remainingCompanies.length > 6;
+    
+    nextBatch.forEach((company) => {
+        const industry = company.industry || 'Unknown Industry';
+        const city = company.city || 'Unknown City';
+        const country = company.country || 'Unknown Country';
+        
+        html += `
+        <div class="company-tag">
+            <i class="fas fa-building company-tag-icon"></i>
+            <div class="flex flex-col min-w-0">
+                <div class="company-tag-name">${company.name}</div>
+                <div class="company-tag-details">${city}, ${country} • ${industry}</div>
+            </div>
+        </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    
+    if (hasMore) {
+        showMoreBtn.onclick = () => showMoreCompanies(companies, startIndex + 6);
+    } else {
+        showMoreBtn.classList.add('hidden');
+    }
+}
+
+function showLoading() {
+    document.getElementById('logs-section').classList.remove('hidden');
+    clearLogs();
+    addLog('Starting search...', 'info');
+}
+
+function hideLoading() {
+    // No-op: loading spinner removed
+}
+
+function showContacts(executives) {
+    const section = document.getElementById('contacts-section');
+    if (!executives || executives.length === 0) {
+        section.classList.add('hidden');
+        section.innerHTML = '';
+        return;
+    }
+    section.classList.remove('hidden');
+    let html = `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
+    executives.forEach(exe => {
+        html += `
+        <div class="bg-white rounded-xl shadow p-4 flex flex-col gap-2 border border-gray-200 hover:shadow-lg transition">
+            <div class="flex items-center gap-3 mb-1">
+                <div class="rounded-full bg-blue-100 w-12 h-12 flex items-center justify-center text-2xl font-bold text-blue-700">
+                    ${exe.name ? exe.name.charAt(0).toUpperCase() : '?'}
+                </div>
+                <div>
+                    <div class="font-semibold text-lg text-gray-900">${exe.name || 'Unknown'}</div>
+                    <div class="text-gray-600 text-sm">${exe.title || ''}</div>
+                    <div class="text-gray-500 text-xs">${exe.company || exe.bank || ''}</div>
+                </div>
+            </div>
+            <div class="flex gap-3 items-center">
+                ${exe.email ? `<a href="mailto:${exe.email}" class="text-green-600 hover:text-green-800" title="Email"><i class="fas fa-envelope fa-lg"></i></a>` : ''}
+                ${exe.linkedin ? `<a href="${exe.linkedin}" target="_blank" class="text-blue-600 hover:text-blue-800" title="LinkedIn"><i class="fab fa-linkedin fa-lg"></i></a>` : ''}
+                ${exe.source_url ? `<a href="${exe.source_url}" target="_blank" class="text-gray-400 hover:text-gray-700" title="Source"><i class="fas fa-link fa-lg"></i></a>` : ''}
+            </div>
+        </div>
+        `;
+    });
+    html += '</div>';
+    section.innerHTML = html;
+}
+
+function showResults(executives) {
+    showContacts(executives);
+    const resultsSection = document.getElementById('results-section');
+    const resultsContent = document.getElementById('results-content');
+    
+    resultsSection.classList.remove('hidden');
+    
+    if (executives.length === 0) {
+        resultsContent.innerHTML = `
+            <div class="text-center py-8">
+                <i class="fas fa-search text-4xl text-gray-400 mb-4"></i>
+                <p class="text-gray-600">No executives found. Try a different search query.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div class="mb-4">
+            <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                Found ${executives.length} executives
+            </span>
+        </div>
+        <div class="grid gap-4">
+    `;
+    
+    executives.forEach((executive, index) => {
+        html += `
+            <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-lg text-gray-900">${executive.name || 'Unknown'}</h4>
+                        <p class="text-gray-600">${executive.title || 'N/A'}</p>
+                        <p class="text-gray-500 text-sm">${executive.company || executive.bank || 'N/A'}</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        ${executive.linkedin ? `<a href="${executive.linkedin}" target="_blank" class="text-blue-600 hover:text-blue-800"><i class="fab fa-linkedin"></i></a>` : ''}
+                        ${executive.email ? `<a href="mailto:${executive.email}" class="text-green-600 hover:text-green-800"><i class="fas fa-envelope"></i></a>` : ''}
+                    </div>
+                </div>
+                ${executive.source_url ? `<p class="text-xs text-gray-400 mt-2">Source: <a href="${executive.source_url}" target="_blank" class="hover:underline">${executive.source_url}</a></p>` : ''}
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    resultsContent.innerHTML = html;
+}
+
+// WebSocket connection
+function connectWebSocket() {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    
+    console.log('Connecting to WebSocket:', wsUrl);
+    websocket = new WebSocket(wsUrl);
+    
+    websocket.onopen = function(event) {
+        console.log('WebSocket connected successfully');
+        addLog('Connected to live logs', 'success');
+    };
+    
+    websocket.onmessage = function(event) {
+        console.log('WebSocket message received:', event.data);
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'log') {
+            addLog(data.message, data.log_type);
+        } else if (data.type === 'companies') {
+            showCompanies(data.companies);
+        } else if (data.type === 'results') {
+            showResults(data.executives);
+            isSearching = false;
+            hideLoading();
+            showNotification(`Search completed! Found ${data.count} executives`, 'success');
+        }
+    };
+    
+    websocket.onclose = function(event) {
+        console.log('WebSocket disconnected:', event);
+        addLog('Disconnected from live logs - using fallback mode', 'warning');
+    };
+    
+    websocket.onerror = function(error) {
+        console.error('WebSocket error:', error);
+        addLog('WebSocket error - using fallback mode', 'error');
+    };
+}
+
+// Fallback function to add logs when WebSocket is not available
+function addLogFallback(message, type = 'info') {
+    const logsContent = document.getElementById('logs-content');
+    const logEntry = document.createElement('div');
+    logEntry.className = `log-entry log-${type}`;
+    logEntry.innerHTML = `
+        <span class="font-mono text-xs text-gray-500">${new Date().toLocaleTimeString()}</span>
+        <span class="ml-2">${message}</span>
+    `;
+    logsContent.appendChild(logEntry);
+    logsContent.scrollTop = logsContent.scrollHeight;
+    const logsContainer = document.getElementById('logs-container');
+    logsContainer.scrollTop = logsContainer.scrollHeight;
+}
+
+let lastExtractedContacts = [];
+
+// Override search form submission for two-phase extraction
+
+document.getElementById('search-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    if (isSearching) return;
+    const query = document.getElementById('search-input').value.trim();
+    if (!query) {
+        showNotification('Please enter a search query', 'warning');
+        return;
+    }
+    isSearching = true;
+    showLoading();
+    
+    // Hide previous results/confirmation
+    document.getElementById('results-section').classList.add('hidden');
+    document.getElementById('confirm-section').classList.add('hidden');
+    document.getElementById('contacts-section').classList.add('hidden');
+    
+    try {
+        const response = await fetch('/api/extract-basic', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            lastExtractedContacts = result.executives || [];
+            
+            // Show companies prominently
+            if (result.companies && result.companies.length > 0) {
+                showCompanies(result.companies);
+            }
+            
+            // Show company information from the response (only if WebSocket didn't work)
+            if (result.companies && result.companies.length > 0 && (!websocket || websocket.readyState !== WebSocket.OPEN)) {
+                for (const company of result.companies) {
+                    addLogFallback(`🏢 Company identified: ${company.name}`, 'info');
+                }
+            }
+            
+            showContacts(lastExtractedContacts);
+            document.getElementById('confirm-section').classList.remove('hidden');
+            
+            // Only show fallback success message if WebSocket is not working
+            if (!websocket || websocket.readyState !== WebSocket.OPEN) {
+                addLogFallback(`✅ Found ${lastExtractedContacts.length} executives`, 'success');
+            }
+            isSearching = false;
+        } else {
+            showNotification('Error: ' + result.error, 'error');
+            addLogFallback('❌ Error: ' + result.error, 'error');
+            isSearching = false;
+            hideLoading();
+        }
+    } catch (error) {
+        showNotification('Error: ' + error.message, 'error');
+        addLogFallback('❌ Error: ' + error.message, 'error');
+        isSearching = false;
+        hideLoading();
+    }
+});
+
+// Confirmation button handlers
+
+document.getElementById('confirm-yes').onclick = async function() {
+    if (!lastExtractedContacts.length) return;
+    isSearching = true;
+    document.getElementById('confirm-section').classList.add('hidden');
+    showLoading();
+    try {
+        const response = await fetch('/api/enrich-contacts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(lastExtractedContacts)
+        });
+        const result = await response.json();
+        if (result.success) {
+            showContacts(result.executives);
+            showNotification('Enrichment and save completed!', 'success');
+        } else {
+            showNotification('Error: ' + result.error, 'error');
+        }
+    } catch (error) {
+        showNotification('Error: ' + error.message, 'error');
+    }
+    isSearching = false;
+    hideLoading();
+};
+
+document.getElementById('confirm-no').onclick = async function() {
+    if (!lastExtractedContacts.length) return;
+    isSearching = true;
+    document.getElementById('confirm-section').classList.add('hidden');
+    showLoading();
+    try {
+        const response = await fetch('/api/save-basic-contacts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(lastExtractedContacts)
+        });
+        const result = await response.json();
+        if (result.success) {
+            showNotification('Basic contacts saved to CSV. No further enrichment performed.', 'success');
+        } else {
+            showNotification('Error: ' + result.error, 'error');
+        }
+    } catch (error) {
+        showNotification('Error: ' + error.message, 'error');
+    }
+    isSearching = false;
+    hideLoading();
+};
+
+// Upload button click
+document.getElementById('upload-btn').addEventListener('click', function() {
+    document.getElementById('csv-file').click();
+});
+
+// File input change handler
+document.getElementById('csv-file').addEventListener('change', async function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    if (isSearching) return;
+    
+    isSearching = true;
+    showLoading();
+    addLog('Starting batch processing...', 'info');
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+        const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('Batch processing started successfully', 'success');
+        } else {
+            showNotification('Error starting batch processing: ' + result.error, 'error');
+            isSearching = false;
+            hideLoading();
+        }
+    } catch (error) {
+        showNotification('Error: ' + error.message, 'error');
+        isSearching = false;
+        hideLoading();
+    }
+});
+
+// Initialize WebSocket connection
+document.addEventListener('DOMContentLoaded', function() {
+    connectWebSocket();
+});
+</script>
+{% endblock %} 

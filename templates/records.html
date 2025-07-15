@@ -1,0 +1,475 @@
+{% extends "base.html" %}
+
+{% block title %}Records - CXO Executive Scraper{% endblock %}
+
+{% block extra_head %}
+<style>
+    .table-container {
+        max-height: 600px;
+        overflow-y: auto;
+        overflow-x: auto;
+    }
+    .filter-card {
+        transition: all 0.3s ease;
+    }
+    .filter-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    .status-badge {
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    .status-email { background-color: #dcfce7; color: #166534; }
+    .status-linkedin { background-color: #dbeafe; color: #1e40af; }
+    .status-none { background-color: #f3f4f6; color: #6b7280; }
+    
+    /* Table column widths */
+    .table-min-width {
+        min-width: 600px;
+    }
+    .col-executive { width: 120px; min-width: 120px; }
+    .col-company { width: 120px; min-width: 120px; }
+    .col-position { width: 120px; min-width: 120px; }
+    .col-contact { width: 120px; min-width: 120px; }
+    .col-source { width: 120px; min-width: 120px; }
+    
+    /* Collapsible filters */
+    .filter-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+    }
+    .filter-content.expanded {
+        max-height: 500px;
+        transition: max-height 0.3s ease-in;
+    }
+    .filter-toggle {
+        transition: transform 0.3s ease;
+    }
+    .filter-toggle.rotated {
+        transform: rotate(180deg);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">
+                <i class="fas fa-database text-blue-600 mr-3"></i>
+                Executive Records
+            </h1>
+            <p class="text-gray-600 mt-2">Browse and filter extracted executive information</p>
+        </div>
+        <div class="flex space-x-3">
+            <button onclick="refreshData()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                <i class="fas fa-sync-alt mr-2"></i>Refresh
+            </button>
+            <button onclick="exportData()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                <i class="fas fa-download mr-2"></i>Export
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-white p-6 rounded-xl shadow-lg">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                    <i class="fas fa-users text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Total Executives</p>
+                    <p id="total-executives" class="text-2xl font-bold text-gray-900">-</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white p-6 rounded-xl shadow-lg">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-green-100 text-green-600">
+                    <i class="fas fa-building text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Companies</p>
+                    <p id="total-companies" class="text-2xl font-bold text-gray-900">-</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white p-6 rounded-xl shadow-lg">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                    <i class="fas fa-envelope text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">With Email</p>
+                    <p id="with-email" class="text-2xl font-bold text-gray-900">-</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white p-6 rounded-xl shadow-lg">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-orange-100 text-orange-600">
+                    <i class="fab fa-linkedin text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">With LinkedIn</p>
+                    <p id="with-linkedin" class="text-2xl font-bold text-gray-900">-</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collapsible Filters -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <button onclick="toggleFilters()" class="w-full px-6 py-4 text-left hover:bg-gray-50 transition-colors">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-semibold text-gray-900">
+                    <i class="fas fa-filter text-purple-600 mr-2"></i>Filters
+                </h3>
+                <i id="filter-toggle-icon" class="fas fa-chevron-down filter-toggle text-gray-500"></i>
+            </div>
+        </button>
+        
+        <div id="filter-content" class="filter-content">
+            <div class="px-6 pb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Company</label>
+                        <input type="text" id="company-filter" placeholder="Search by company..." 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Position</label>
+                        <input type="text" id="position-filter" placeholder="Search by position..." 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email Status</label>
+                        <select id="email-filter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">All</option>
+                            <option value="true">Has Email</option>
+                            <option value="false">No Email</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">LinkedIn Status</label>
+                        <select id="linkedin-filter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">All</option>
+                            <option value="true">Has LinkedIn</option>
+                            <option value="false">No LinkedIn</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="flex justify-between items-center mt-4">
+                    <div class="flex space-x-2">
+                        <button onclick="applyFilters()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-search mr-2"></i>Apply Filters
+                        </button>
+                        <button onclick="clearFilters()" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                            <i class="fas fa-times mr-2"></i>Clear
+                        </button>
+                    </div>
+                    <div class="text-sm text-gray-600">
+                        Showing <span id="showing-count">-</span> of <span id="total-count">-</span> records
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-xl font-semibold text-gray-900">
+                <i class="fas fa-table text-green-600 mr-2"></i>Executive Data
+            </h3>
+        </div>
+        
+        <div class="table-container">
+            <table class="table-min-width min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50 sticky top-0">
+                    <tr>
+                        <th class="col-executive px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Executive
+                        </th>
+                        <th class="col-company px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Company
+                        </th>
+                        <th class="col-position px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Position
+                        </th>
+                        <th class="col-contact px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Contact
+                        </th>
+                        <th class="col-source px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Source
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="records-tbody" class="bg-white divide-y divide-gray-200">
+                    <!-- Records will be populated here -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Loading State -->
+        <div id="loading-state" class="hidden p-8 text-center">
+            <div class="inline-flex items-center">
+                <div class="loading-spinner w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mr-3"></div>
+                <span class="text-gray-600">Loading records...</span>
+            </div>
+        </div>
+        
+        <!-- Empty State -->
+        <div id="empty-state" class="hidden p-8 text-center">
+            <i class="fas fa-database text-4xl text-gray-400 mb-4"></i>
+            <p class="text-gray-600">No records found. Try adjusting your filters or run a search first.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let currentRecords = [];
+let filteredRecords = [];
+let filtersExpanded = false;
+
+// Load data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadRecords();
+    
+    // Add event listeners for real-time filtering
+    document.getElementById('company-filter').addEventListener('input', debounce(applyFilters, 300));
+    document.getElementById('position-filter').addEventListener('input', debounce(applyFilters, 300));
+    document.getElementById('email-filter').addEventListener('change', applyFilters);
+    document.getElementById('linkedin-filter').addEventListener('change', applyFilters);
+});
+
+function toggleFilters() {
+    const filterContent = document.getElementById('filter-content');
+    const filterToggleIcon = document.getElementById('filter-toggle-icon');
+    
+    if (filtersExpanded) {
+        filterContent.classList.remove('expanded');
+        filterToggleIcon.classList.remove('rotated');
+    } else {
+        filterContent.classList.add('expanded');
+        filterToggleIcon.classList.add('rotated');
+    }
+    
+    filtersExpanded = !filtersExpanded;
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+async function loadRecords() {
+    showLoading(true);
+    
+    try {
+        const response = await fetch('/api/records');
+        const data = await response.json();
+        
+        if (data.error) {
+            showNotification('Error loading records: ' + data.error, 'error');
+            return;
+        }
+        
+        currentRecords = data.records || [];
+        filteredRecords = [...currentRecords];
+        
+        updateStats();
+        renderTable();
+        showLoading(false);
+        
+    } catch (error) {
+        showNotification('Error loading records: ' + error.message, 'error');
+        showLoading(false);
+    }
+}
+
+function updateStats() {
+    const totalExecutives = currentRecords.length;
+    const companies = new Set(currentRecords.map(r => r.Company || r.bank).filter(Boolean)).size;
+    const withEmail = currentRecords.filter(r => r.Email && r.Email.trim()).length;
+    const withLinkedIn = currentRecords.filter(r => r.LinkedIn && r.LinkedIn.trim()).length;
+    
+    document.getElementById('total-executives').textContent = totalExecutives;
+    document.getElementById('total-companies').textContent = companies;
+    document.getElementById('with-email').textContent = withEmail;
+    document.getElementById('with-linkedin').textContent = withLinkedIn;
+}
+
+function applyFilters() {
+    const companyFilter = document.getElementById('company-filter').value.toLowerCase();
+    const positionFilter = document.getElementById('position-filter').value.toLowerCase();
+    const emailFilter = document.getElementById('email-filter').value;
+    const linkedinFilter = document.getElementById('linkedin-filter').value;
+    
+    filteredRecords = currentRecords.filter(record => {
+        const company = (record.Company || record.bank || '').toLowerCase();
+        const position = (record.Title || '').toLowerCase();
+        const hasEmail = record.Email && record.Email.trim();
+        const hasLinkedin = record.LinkedIn && record.LinkedIn.trim();
+        
+        if (companyFilter && !company.includes(companyFilter)) return false;
+        if (positionFilter && !position.includes(positionFilter)) return false;
+        if (emailFilter === 'true' && !hasEmail) return false;
+        if (emailFilter === 'false' && hasEmail) return false;
+        if (linkedinFilter === 'true' && !hasLinkedin) return false;
+        if (linkedinFilter === 'false' && hasLinkedin) return false;
+        
+        return true;
+    });
+    
+    renderTable();
+}
+
+function clearFilters() {
+    document.getElementById('company-filter').value = '';
+    document.getElementById('position-filter').value = '';
+    document.getElementById('email-filter').value = '';
+    document.getElementById('linkedin-filter').value = '';
+    
+    filteredRecords = [...currentRecords];
+    renderTable();
+}
+
+function renderTable() {
+    const tbody = document.getElementById('records-tbody');
+    const showingCount = document.getElementById('showing-count');
+    const totalCount = document.getElementById('total-count');
+    
+    showingCount.textContent = filteredRecords.length;
+    totalCount.textContent = currentRecords.length;
+    
+    if (filteredRecords.length === 0) {
+        tbody.innerHTML = '';
+        document.getElementById('empty-state').classList.remove('hidden');
+        return;
+    }
+    
+    document.getElementById('empty-state').classList.add('hidden');
+    
+    tbody.innerHTML = filteredRecords.map(record => `
+        <tr class="hover:bg-gray-50 transition-colors">
+            <td class="col-executive px-6 py-4">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 h-10 w-10">
+                        <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <span class="text-blue-600 font-semibold">${(record.Name || 'Unknown').charAt(0).toUpperCase()}</span>
+                        </div>
+                    </div>
+                    <div class="ml-4 min-w-0 flex-1">
+                        <div class="text-sm font-medium text-gray-900 break-words">${record.Name || 'Unknown'}</div>
+                    </div>
+                </div>
+            </td>
+            <td class="col-company px-6 py-4">
+                <div class="text-sm text-gray-900 break-words" title="${record.Company || record.bank || 'N/A'}">${record.Company || record.bank || 'N/A'}</div>
+            </td>
+            <td class="col-position px-6 py-4">
+                <div class="text-sm text-gray-900 break-words" title="${record.Title || 'N/A'}">${record.Title || 'N/A'}</div>
+            </td>
+            <td class="col-contact px-6 py-4">
+                <div class="flex flex-col space-y-1">
+                    ${record.Email ? 
+                        `<span class="status-badge status-email">
+                            <i class="fas fa-envelope mr-1"></i>Email
+                        </span>` : 
+                        `<span class="status-badge status-none">No Email</span>`
+                    }
+                    ${record.LinkedIn ? 
+                        `<span class="status-badge status-linkedin">
+                            <i class="fab fa-linkedin mr-1"></i>LinkedIn
+                        </span>` : 
+                        `<span class="status-badge status-none">No LinkedIn</span>`
+                    }
+                </div>
+            </td>
+            <td class="col-source px-6 py-4">
+                ${record['Source URL'] ? 
+                    `<a href="${record['Source URL']}" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm break-words block" title="${record['Source URL']}">
+                        <i class="fas fa-external-link-alt mr-1"></i>View Source
+                    </a>` : 
+                    '<span class="text-gray-400 text-sm">N/A</span>'
+                }
+            </td>
+        </tr>
+    `).join('');
+}
+
+function showLoading(show) {
+    const loadingState = document.getElementById('loading-state');
+    const emptyState = document.getElementById('empty-state');
+    const tbody = document.getElementById('records-tbody');
+    
+    if (show) {
+        loadingState.classList.remove('hidden');
+        emptyState.classList.add('hidden');
+        tbody.innerHTML = '';
+    } else {
+        loadingState.classList.add('hidden');
+    }
+}
+
+function refreshData() {
+    loadRecords();
+    showNotification('Data refreshed successfully', 'success');
+}
+
+function exportData() {
+    if (filteredRecords.length === 0) {
+        showNotification('No data to export', 'warning');
+        return;
+    }
+    
+    // Create CSV content
+    const headers = ['Name', 'Title', 'Company', 'Email', 'LinkedIn', 'Source URL'];
+    const csvContent = [
+        headers.join(','),
+        ...filteredRecords.map(record => 
+            headers.map(header => {
+                const value = record[header] || '';
+                return `"${value.replace(/"/g, '""')}"`;
+            }).join(',')
+        )
+    ].join('\n');
+    
+    // Download file
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `executives_export_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    showNotification('Data exported successfully', 'success');
+}
+</script>
+{% endblock %} 

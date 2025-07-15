@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+
+{% block title %}Configuration - Professional Investors Finder{% endblock %}
+
+{% block extra_head %}
+<style>
+    .config-card {
+        transition: all 0.3s ease;
+    }
+    .config-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    .setting-group {
+        border-left: 4px solid #667eea;
+        padding-left: 1rem;
+    }
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+    }
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 34px;
+    }
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+    input:checked + .slider {
+        background-color: #667eea;
+    }
+    input:checked + .slider:before {
+        transform: translateX(26px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="text-center">
+        <h1 class="text-3xl font-bold text-gray-900 mb-4">
+            <i class="fas fa-cog text-blue-600 mr-3"></i>
+            Configuration Settings
+        </h1>
+        <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+            Customize the scraper behavior and performance settings
+        </p>
+    </div>
+
+    <!-- Configuration Form -->
+    <div class="max-w-4xl mx-auto">
+        <form id="config-form" class="space-y-6">
+            <!-- Search Settings -->
+            <div class="bg-white p-6 rounded-xl shadow-lg config-card">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4 setting-group">
+                    <i class="fas fa-search text-blue-600 mr-2"></i>Search Settings
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Target Executives per Company
+                        </label>
+                        <input type="number" id="target-executives" name="target_executives_per_company" 
+                               min="1" max="20" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <p class="text-sm text-gray-500 mt-1">Number of executives to extract per company (1-20)</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Max Results per Query
+                        </label>
+                        <input type="number" id="max-results" name="max_results_per_query" 
+                               min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <p class="text-sm text-gray-500 mt-1">Maximum search results to process per query (1-10)</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timing Settings -->
+            <div class="bg-white p-6 rounded-xl shadow-lg config-card">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4 setting-group">
+                    <i class="fas fa-clock text-green-600 mr-2"></i>Timing Settings
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Delay Between Queries (seconds)
+                        </label>
+                        <input type="number" id="delay-queries" name="delay_between_queries" 
+                               min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <p class="text-sm text-gray-500 mt-1">Wait time between search queries to avoid rate limiting</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Delay Between Companies (seconds)
+                        </label>
+                        <input type="number" id="delay-companies" name="delay_between_companies" 
+                               min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <p class="text-sm text-gray-500 mt-1">Wait time between processing different companies</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Optimization Settings -->
+            <div class="bg-white p-6 rounded-xl shadow-lg config-card">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4 setting-group">
+                    <i class="fas fa-rocket text-purple-600 mr-2"></i>Optimization Settings
+                </h3>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700">Enable Early Termination</label>
+                            <p class="text-sm text-gray-500">Stop processing when target executive count is reached</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="early-termination" name="enable_early_termination">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700">Enable Duplicate Prevention</label>
+                            <p class="text-sm text-gray-500">Prevent duplicate executives from being extracted</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="duplicate-prevention" name="enable_duplicate_prevention">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700">LLM Query Generation</label>
+                            <p class="text-sm text-gray-500">Use AI to generate optimized search queries</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="llm-generation" name="llm_query_generation">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quality Settings -->
+            <div class="bg-white p-6 rounded-xl shadow-lg config-card">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4 setting-group">
+                    <i class="fas fa-star text-yellow-600 mr-2"></i>Quality Settings
+                </h3>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Quality Threshold
+                    </label>
+                    <input type="range" id="quality-threshold" name="quality_threshold" 
+                           min="0.1" max="1.0" step="0.1" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    <div class="flex justify-between text-sm text-gray-500 mt-1">
+                        <span>0.1 (Low)</span>
+                        <span id="quality-value">0.7</span>
+                        <span>1.0 (High)</span>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-1">Minimum confidence score for executive extraction</p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex justify-center space-x-4">
+                <button type="submit" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-save mr-2"></i>Save Configuration
+                </button>
+                <button type="button" onclick="resetToDefaults()" class="bg-gray-500 text-white px-8 py-3 rounded-lg hover:bg-gray-600 transition-colors">
+                    <i class="fas fa-undo mr-2"></i>Reset to Defaults
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Current Configuration Display -->
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white p-6 rounded-xl shadow-lg">
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">
+                <i class="fas fa-info-circle text-blue-600 mr-2"></i>Current Configuration
+            </h3>
+            <div id="current-config" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <!-- Current config will be populated here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Load configuration on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadConfiguration();
+    
+    // Quality threshold slider
+    const qualitySlider = document.getElementById('quality-threshold');
+    const qualityValue = document.getElementById('quality-value');
+    
+    qualitySlider.addEventListener('input', function() {
+        qualityValue.textContent = this.value;
+    });
+});
+
+async function loadConfiguration() {
+    try {
+        const response = await fetch('/api/config');
+        const config = await response.json();
+        
+        // Populate form fields
+        document.getElementById('target-executives').value = config.target_executives_per_company;
+        document.getElementById('max-results').value = config.max_results_per_query;
+        document.getElementById('delay-queries').value = config.delay_between_queries;
+        document.getElementById('delay-companies').value = config.delay_between_companies;
+        document.getElementById('early-termination').checked = config.enable_early_termination;
+        document.getElementById('duplicate-prevention').checked = config.enable_duplicate_prevention;
+        document.getElementById('llm-generation').checked = config.llm_query_generation;
+        document.getElementById('quality-threshold').value = config.quality_threshold;
+        document.getElementById('quality-value').textContent = config.quality_threshold;
+        
+        // Display current configuration
+        displayCurrentConfig(config);
+        
+    } catch (error) {
+        showNotification('Error loading configuration: ' + error.message, 'error');
+    }
+}
+
+function displayCurrentConfig(config) {
+    const container = document.getElementById('current-config');
+    
+    container.innerHTML = `
+        <div class="bg-gray-50 p-3 rounded">
+            <span class="font-medium">Target Executives:</span> ${config.target_executives_per_company}
+        </div>
+        <div class="bg-gray-50 p-3 rounded">
+            <span class="font-medium">Max Results per Query:</span> ${config.max_results_per_query}
+        </div>
+        <div class="bg-gray-50 p-3 rounded">
+            <span class="font-medium">Delay Between Queries:</span> ${config.delay_between_queries}s
+        </div>
+        <div class="bg-gray-50 p-3 rounded">
+            <span class="font-medium">Delay Between Companies:</span> ${config.delay_between_companies}s
+        </div>
+        <div class="bg-gray-50 p-3 rounded">
+            <span class="font-medium">Early Termination:</span> ${config.enable_early_termination ? 'Enabled' : 'Disabled'}
+        </div>
+        <div class="bg-gray-50 p-3 rounded">
+            <span class="font-medium">Duplicate Prevention:</span> ${config.enable_duplicate_prevention ? 'Enabled' : 'Disabled'}
+        </div>
+        <div class="bg-gray-50 p-3 rounded">
+            <span class="font-medium">LLM Query Generation:</span> ${config.llm_query_generation ? 'Enabled' : 'Disabled'}
+        </div>
+        <div class="bg-gray-50 p-3 rounded">
+            <span class="font-medium">Quality Threshold:</span> ${config.quality_threshold}
+        </div>
+    `;
+}
+
+// Form submission
+document.getElementById('config-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const config = {
+        target_executives_per_company: parseInt(formData.get('target_executives_per_company')),
+        max_results_per_query: parseInt(formData.get('max_results_per_query')),
+        delay_between_queries: parseInt(formData.get('delay_between_queries')),
+        delay_between_companies: parseInt(formData.get('delay_between_companies')),
+        enable_early_termination: formData.get('enable_early_termination') === 'on',
+        enable_duplicate_prevention: formData.get('enable_duplicate_prevention') === 'on'
+    };
+    
+    try {
+        const response = await fetch('/api/config', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(config)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('Configuration saved successfully', 'success');
+            loadConfiguration(); // Reload to show updated values
+        } else {
+            showNotification('Error saving configuration: ' + result.error, 'error');
+        }
+    } catch (error) {
+        showNotification('Error: ' + error.message, 'error');
+    }
+});
+
+function resetToDefaults() {
+    if (confirm('Are you sure you want to reset all settings to defaults?')) {
+        // Set default values
+        document.getElementById('target-executives').value = 5;
+        document.getElementById('max-results').value = 5;
+        document.getElementById('delay-queries').value = 2;
+        document.getElementById('delay-companies').value = 3;
+        document.getElementById('early-termination').checked = true;
+        document.getElementById('duplicate-prevention').checked = true;
+        document.getElementById('llm-generation').checked = true;
+        document.getElementById('quality-threshold').value = 0.7;
+        document.getElementById('quality-value').textContent = '0.7';
+        
+        showNotification('Configuration reset to defaults', 'info');
+    }
+}
+</script>
+{% endblock %} 
