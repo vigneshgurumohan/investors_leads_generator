@@ -60,7 +60,7 @@ logs/
 .env.example
 
 # Data files (uncomment if you don't want to track data)
-*.csv
+#*.csv
 *.json
 *.txt
 !requirements.txt
