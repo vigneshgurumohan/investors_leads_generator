@@ -13,5 +13,5 @@ aiofiles==23.2.1
 websockets==12.0
 blis==0.7.9
 pydantic==2.7.1
-serpapi==2.4.2
 fake-useragent==2.2.0
+google-search-results==2.4.2
